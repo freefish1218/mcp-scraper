@@ -1,1 +1,0 @@
-python src/clear_cache.py

@@ -25,7 +25,6 @@ class ScraperConfig(BaseModel):
     max_retries: int = Field(default=2, description="最大重试次数", ge=0)
     use_browser: bool = Field(default=False, description="是否强制使用浏览器抓取")
     referer: Optional[str] = Field(default=None, description="来源URL, 比如https://www.google.com/?q=python")
-    llm_summary: bool = Field(default=False, description="是否启用自动总结")
 
     # 抓取与解析设置
     wait_for: int = Field(default=1000, description="加载页面等待时间（毫秒）", ge=0)
@@ -122,12 +121,6 @@ class ScrapedArticle(BaseModel):
     title: str = Field(default="", description="文章标题")
     content: str = Field(default="", description="文章正文内容")
     links: List[Link] = Field(default_factory=list, description="文章中的链接列表")
-    
-    # -- begin: 需使用 llm 总结 --
-    source: Optional[str] = Field(default=None, description="文章来源")
-    summary: Optional[list] = Field(default=None, description="文章摘要")
-    # -- end: 需使用 llm 总结 --
-
     scrape_time: str = Field(default_factory=lambda: datetime.now().isoformat(), description="抓取时间(ISO格式字符串)")
     html: str = Field(default="", description="原始HTML内容")
     

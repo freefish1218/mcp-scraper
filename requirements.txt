@@ -4,14 +4,10 @@ scrapling>=0.2.99
 # mcp
 fastmcp>=2.8.0
 
-# langchain
-langchain_openai>=0.3.22
-langchain_core>=0.3.65
-
 # others
 lxml[html_clean]>=5.4.0 # 清理 HTML
 htmldate>=1.9.3 # 获取页面发布时间
 tldextract>=5.3.0 # 提取域名
 diskcache>=5.6.3 # 缓存数据
 pydantic>=2.11.4
-aiohttp>=3.12.12
+python-dotenv>=1.0.0

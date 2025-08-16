@@ -55,7 +55,7 @@ SERVER_INFO = {
     "name": "MCPScraperServer",
     "version": version,
     "description": "专业的网页内容抓取服务，支持单个和批量URL处理、内容提取和语言检测",
-    "features": ["单个URL抓取", "批量URL抓取", "内容提取", "语言检测", "LLM自动总结"],
+    "features": ["单个URL抓取", "批量URL抓取", "内容提取", "语言检测"],
     "instructions": f"这个服务器提供专业的网页内容抓取功能，支持单个和批量URL处理、内容提取和语言检测。当前版本: {version}"
 }
 
@@ -120,8 +120,7 @@ async def scrape(
     timeout: Annotated[int, "请求超时时间，单位为毫秒，默认10000ms"] = 10000, 
     max_retries: Annotated[int, "最大重试次数，抓取失败时的重试次数，默认2次"] = 2,
     use_browser: Annotated[bool, "是否强制使用浏览器渲染，适用于动态内容，默认False"] = False,
-    referer: Annotated[Optional[str], "HTTP Referer头，用于绕过防盗链检测"] = None,
-    llm_summary: Annotated[bool, "是否启用LLM自动总结文章内容，默认False"] = False
+    referer: Annotated[Optional[str], "HTTP Referer头，用于绕过防盗链检测"] = None
 ) -> List[TextContent]:
     """
     抓取单个URL并返回文章内容
@@ -133,7 +132,6 @@ async def scrape(
         max_retries: 最大重试次数
         use_browser: 是否强制使用浏览器抓取
         referer: 来源URL
-        llm_summary: 是否启用自动总结
         
     Returns:
         包含文章内容的文本
@@ -153,8 +151,7 @@ async def scrape(
         timeout=timeout,
         max_retries=max_retries,
         use_browser=use_browser,
-        referer=referer,
-        llm_summary=llm_summary
+        referer=referer
     )
     
     logger.info(f"抓取完成: {url}")
@@ -183,8 +180,7 @@ async def bulk_scrape(
     max_retries: Annotated[int, "单个URL的最大重试次数，默认2次"] = 2,
     max_workers: Annotated[int, "并发抓取的工作线程数，控制同时抓取的URL数量，默认5个"] = 5,
     use_browser: Annotated[bool, "是否强制使用浏览器渲染所有URL，适用于动态内容，默认False"] = False,
-    referer: Annotated[Optional[str], "HTTP Referer头，应用于所有请求，用于绕过防盗链检测"] = None,
-    llm_summary: Annotated[bool, "是否对所有抓取的文章启用LLM自动总结，默认False"] = False
+    referer: Annotated[Optional[str], "HTTP Referer头，应用于所有请求，用于绕过防盗链检测"] = None
 ) -> List[TextContent]:
     """
     批量抓取多个URL并返回文章内容列表
@@ -197,7 +193,6 @@ async def bulk_scrape(
         max_workers: 抓取并发数
         use_browser: 是否强制使用浏览器抓取
         referer: 来源URL
-        llm_summary: 是否启用自动总结
         
     Returns:
         包含所有抓取文章的JSON字符串
@@ -219,8 +214,7 @@ async def bulk_scrape(
         timeout=timeout,
         max_retries=max_retries,
         use_browser=use_browser,
-        referer=referer,
-        llm_summary=llm_summary
+        referer=referer
     )
     
     logger.info(f"批量抓取完成，成功获取 {len(article_list.articles)} 篇文章")

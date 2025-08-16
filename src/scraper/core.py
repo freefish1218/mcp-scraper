@@ -33,7 +33,6 @@ from scraper.utils.content_validator import validate_webpage_url, validate_respo
 from scraper.utils.exceptions import InvalidContentTypeError
 from scraper.storage import DiskCache, custom_scrape_cache_key, dynamic_scrape_cache_key
 from scraper.utils.logger import get_logger
-from scraper.summarizer import summarize_article
 
 
 # ============================================================================
@@ -258,7 +257,6 @@ class ContentExtractor:
         self, 
         url: str, 
         response: Response, 
-        llm_summary: bool = False,
         min_content_length: int = 100,
     ) -> Optional[ScrapedArticle]:
         """
@@ -267,7 +265,6 @@ class ContentExtractor:
         Args:
             url: 原始URL
             response: 页面响应对象
-            llm_summary: 是否启用LLM摘要
             min_content_length: 最小内容长度
             
         Returns:
@@ -291,11 +288,6 @@ class ContentExtractor:
             # 如果标题为空，使用URL生成
             if not article.title:
                 article.title = generate_title_from_url(url)
-            
-            # 应用LLM摘要
-            if llm_summary:
-                self.logger.info(f"开始总结文章: {url}")
-                article = await summarize_article(article)
             
             return article
         except Exception as e:
@@ -452,7 +444,7 @@ class ArticleScraper(BaseScraper):
         这样实现了真正的"创建一次，永久复用，参数灵活传递"的设计
         """
         # 调用父类初始化，使用默认配置（仅用于缓存等基础功能）
-        super().__init__(config=None, cache_directory="ArticleScraper")
+        super().__init__(config=None, cache_directory="cache")
         
         # 初始化组件 - 注意：这里不再初始化 WebFetcher，因为配置是动态的
         self.extractor = ContentExtractor()
@@ -469,15 +461,14 @@ class ArticleScraper(BaseScraper):
         """
         # 创建自定义缓存键函数
         def make_cache_key(url, headless=True, timeout=10000, max_retries=2, 
-                          use_browser=False, referer=None, llm_summary=False):
+                          use_browser=False, referer=None):
             return dynamic_scrape_cache_key(
                 url=url,
                 headless=headless,
                 timeout=timeout,
                 max_retries=max_retries,
                 use_browser=use_browser,
-                referer=referer,
-                llm_summary=llm_summary
+                referer=referer
             )
         
         # 为 _scrape_with_cache 方法添加缓存装饰器
@@ -496,8 +487,7 @@ class ArticleScraper(BaseScraper):
         timeout: int = 10000,
         max_retries: int = 2,
         use_browser: bool = False,
-        referer: Optional[str] = None,
-        llm_summary: bool = False
+        referer: Optional[str] = None
     ) -> Optional[ScrapedArticle]:
         """
         实际执行抓取的内部方法，用于被缓存装饰器包装
@@ -511,7 +501,6 @@ class ArticleScraper(BaseScraper):
             max_retries: 最大重试次数
             use_browser: 是否强制使用浏览器抓取
             referer: 来源URL
-            llm_summary: 是否启用自动总结
         
         Returns:
             ScrapedArticle: 抓取的文章数据，如果失败则返回None
@@ -533,7 +522,6 @@ class ArticleScraper(BaseScraper):
                 max_retries=max_retries,
                 use_browser=use_browser,
                 referer=referer,
-                llm_summary=llm_summary,
             )
             
             # 3. 直接使用工厂方法获取页面内容（零对象创建开销）
@@ -551,7 +539,6 @@ class ArticleScraper(BaseScraper):
             article = await self.extractor.extract_from_response(
                 url=url,
                 response=response,
-                llm_summary=llm_summary,
                 min_content_length=temp_config.min_content_length,
             )
             
@@ -583,8 +570,7 @@ class ArticleScraper(BaseScraper):
         timeout: int = 10000,
         max_retries: int = 2,
         use_browser: bool = False,
-        referer: Optional[str] = None,
-        llm_summary: bool = False
+        referer: Optional[str] = None
     ) -> Optional[ScrapedArticle]:
         """
         抓取URL内容（带缓存）
@@ -596,7 +582,6 @@ class ArticleScraper(BaseScraper):
             max_retries: 最大重试次数
             use_browser: 是否强制使用浏览器抓取
             referer: 来源URL
-            llm_summary: 是否启用自动总结
             
         Returns:
             ScrapedArticle: 抓取的文章数据，如果失败则返回None
@@ -611,8 +596,7 @@ class ArticleScraper(BaseScraper):
             timeout=timeout,
             max_retries=max_retries,
             use_browser=use_browser,
-            referer=referer,
-            llm_summary=llm_summary
+            referer=referer
         )
 
 
@@ -625,8 +609,7 @@ class ArticleScraper(BaseScraper):
         timeout: int = 10000,
         max_retries: int = 2,
         use_browser: bool = False,
-        referer: Optional[str] = None,
-        llm_summary: bool = False
+        referer: Optional[str] = None
     ) -> ScrapedArticleList:
         """
         批量抓取多个URL
@@ -639,7 +622,6 @@ class ArticleScraper(BaseScraper):
             max_retries: 最大重试次数
             use_browser: 是否强制使用浏览器抓取
             referer: 来源URL
-            llm_summary: 是否启用自动总结
         
         Returns:
             ScrapedArticleList: 包含成功抓取的文章列表和失败URL信息的对象
@@ -657,8 +639,7 @@ class ArticleScraper(BaseScraper):
                 timeout=timeout,
                 max_retries=max_retries,
                 use_browser=use_browser,
-                referer=referer,
-                llm_summary=llm_summary
+                referer=referer
             )
         
         # 使用批处理器执行批量抓取

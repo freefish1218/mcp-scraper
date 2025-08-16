@@ -27,7 +27,7 @@ class DiskCache:
     
     def __init__(
         self,
-        directory: str = "",  # 缓存路径
+        directory: str = "cache",  # 缓存路径，默认使用统一缓存目录
         timeout: int = 3600*24*7,  # 默认7天过期
         size_limit: float = 5e9,  # 限制缓存大小为5G
         shards: int = 64,  # 分片数，提高并发性能
@@ -45,12 +45,8 @@ class DiskCache:
             eviction_policy: 缓存淘汰策略
             **kwargs: 传递给FanoutCache的其他参数
         """
-        if isinstance(directory, str):
-            directory = Path(directory)
-        
+        # 统一使用单一缓存目录
         cache_dir = CACHE_DIR
-        if directory:
-            cache_dir = CACHE_DIR / directory
             
         # 确保缓存目录存在
         cache_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -181,7 +177,6 @@ def custom_scrape_cache_key(instance, url):
         config.min_content_length,
         config.use_browser,
         config.referer,
-        config.llm_summary,
     ]))
     key = f"scrape:{file_name}:{config_parts}"
     logger.debug(f"使用缓存键: {key}")
@@ -194,8 +189,7 @@ def dynamic_scrape_cache_key(
     timeout: int = 10000,
     max_retries: int = 2,
     use_browser: bool = False,
-    referer: str = None,
-    llm_summary: bool = False
+    referer: str = None
 ):
     """
     为动态参数的 scrape 方法创建缓存键
@@ -208,7 +202,6 @@ def dynamic_scrape_cache_key(
         max_retries: 最大重试次数
         use_browser: 是否强制使用浏览器抓取
         referer: 来源URL
-        llm_summary: 是否启用自动总结
         
     返回:
         str: 生成的缓存键
@@ -219,7 +212,6 @@ def dynamic_scrape_cache_key(
     cache_params = str(tuple([
         use_browser,
         referer,
-        llm_summary,
     ]))
     
     key = f"scrape_dynamic:{file_name}:{cache_params}"
